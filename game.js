@@ -1,3 +1,18 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, limit, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDmCkBwxbNpQVLmikHyf2s6XwRyKhs2WLU",
+  authDomain: "typinggamecar.firebaseapp.com",
+  projectId: "typinggamecar",
+  storageBucket: "typinggamecar.firebasestorage.app",
+  messagingSenderId: "135600518003",
+  appId: "1:135600518003:web:8ac8ffdafc1e323d634b06"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const QUOTES = {
   easy: [
     "The quick brown fox jumps over the lazy dog.",
@@ -22,12 +37,8 @@ const QUOTES = {
   ]
 };
 
-let quote = '';
-let typed = '';
-let startTime = null;
-let timerInterval = null;
-let running = false;
-let finished = false;
+let quote = '', typed = '', startTime = null, timerInterval = null, running = false, finished = false;
+let lastWPM = 0, lastAcc = '', lastTime = 0;
 
 const qDisplay = document.getElementById('quote-display');
 const inp = document.getElementById('typeinput');
@@ -40,7 +51,11 @@ const resultTitle = document.getElementById('result-title');
 const resultDetail = document.getElementById('result-detail');
 const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
+const btnSave = document.getElementById('btn-save');
 const diffSel = document.getElementById('diff');
+const lbDiff = document.getElementById('lb-diff');
+const usernameInput = document.getElementById('username-input');
+const leaderboardEl = document.getElementById('leaderboard');
 
 function pickQuote() {
   const pool = QUOTES[diffSel.value];
@@ -70,20 +85,17 @@ function calcWPM() {
   return mins > 0 ? Math.round(words / mins) : 0;
 }
 
-function calcAcc() {
-  if (!typed.length) return '—';
+function calcAccNum() {
+  if (!typed.length) return 0;
   let correct = 0;
-  for (let i = 0; i < typed.length; i++) {
-    if (typed[i] === quote[i]) correct++;
-  }
-  return Math.round((correct / typed.length) * 100) + '%';
+  for (let i = 0; i < typed.length; i++) if (typed[i] === quote[i]) correct++;
+  return Math.round((correct / typed.length) * 100);
 }
 
 function moveCar() {
   const pct = Math.min(typed.length / quote.length, 1);
   const trackW = carEl.parentElement.clientWidth;
-  const maxLeft = trackW - 48;
-  carEl.style.left = Math.round(10 + pct * (maxLeft - 10)) + 'px';
+  carEl.style.left = Math.round(10 + pct * (trackW - 48 - 10)) + 'px';
 }
 
 function start() {
@@ -111,16 +123,17 @@ function finish() {
   finished = true;
   inp.disabled = true;
   clearInterval(timerInterval);
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  const wpm = calcWPM();
-  const acc = calcAcc();
-  wpmEl.textContent = wpm;
-  accEl.textContent = acc;
-  timerEl.textContent = elapsed + 's';
+  lastTime = parseFloat(((Date.now() - startTime) / 1000).toFixed(1));
+  lastWPM = calcWPM();
+  lastAcc = calcAccNum();
+  wpmEl.textContent = lastWPM;
+  accEl.textContent = lastAcc + '%';
+  timerEl.textContent = lastTime + 's';
   carEl.style.left = (carEl.parentElement.clientWidth - 38) + 'px';
   resultTitle.textContent = 'Race complete!';
-  resultDetail.textContent = `You typed ${wpm} WPM with ${acc} accuracy in ${elapsed}s.`;
+  resultDetail.textContent = `You typed ${lastWPM} WPM with ${lastAcc}% accuracy in ${lastTime}s.`;
   banner.classList.remove('hidden');
+  btnSave.disabled = false;
   btnStart.disabled = false;
   diffSel.disabled = false;
 }
@@ -144,15 +157,84 @@ function reset() {
   qDisplay.innerHTML = '<span class="hint">Press Start to load a quote...</span>';
 }
 
+async function saveScore() {
+  const name = usernameInput.value.trim();
+  if (!name) { usernameInput.focus(); return; }
+  btnSave.disabled = true;
+  btnSave.textContent = 'Saving...';
+  try {
+    await addDoc(collection(db, 'scores'), {
+      username: name,
+      wpm: lastWPM,
+      accuracy: lastAcc,
+      time: lastTime,
+      difficulty: diffSel.value,
+      createdAt: serverTimestamp()
+    });
+    btnSave.textContent = '✓ Saved!';
+    loadLeaderboard();
+  } catch (e) {
+    btnSave.textContent = 'Error — try again';
+    btnSave.disabled = false;
+    console.error(e);
+  }
+}
+
+async function loadLeaderboard() {
+  leaderboardEl.innerHTML = '<p class="lb-loading">Loading scores...</p>';
+  try {
+    const col = collection(db, 'scores');
+    const selectedDiff = lbDiff.value;
+    let q;
+    if (selectedDiff === 'all') {
+      q = query(col, orderBy('wpm', 'desc'), limit(10));
+    } else {
+      q = query(col, where('difficulty', '==', selectedDiff), orderBy('wpm', 'desc'), limit(10));
+    }
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      leaderboardEl.innerHTML = '<p class="lb-empty">No scores yet — be the first!</p>';
+      return;
+    }
+    const rankIcons = ['🥇', '🥈', '🥉'];
+    const rankClasses = ['gold', 'silver', 'bronze'];
+    let html = `<table class="lb-table">
+      <thead><tr>
+        <th>#</th><th>Name</th><th>Difficulty</th><th>Accuracy</th><th>Time</th><th>WPM</th>
+      </tr></thead><tbody>`;
+    snap.docs.forEach((doc, i) => {
+      const d = doc.data();
+      const rank = i < 3 ? `<span title="Rank ${i+1}">${rankIcons[i]}</span>` : `${i + 1}`;
+      const rankClass = i < 3 ? rankClasses[i] : '';
+      html += `<tr>
+        <td class="rank ${rankClass}">${rank}</td>
+        <td class="name">${escapeHtml(d.username)}</td>
+        <td><span class="diff-badge">${d.difficulty}</span></td>
+        <td>${d.accuracy}%</td>
+        <td>${d.time}s</td>
+        <td class="wpm">${d.wpm}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    leaderboardEl.innerHTML = html;
+  } catch (e) {
+    leaderboardEl.innerHTML = '<p class="lb-empty">Could not load scores.</p>';
+    console.error(e);
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 inp.addEventListener('input', () => {
   if (!running || finished) return;
   if (!startTime) {
     startTime = Date.now();
     timerInterval = setInterval(() => {
-      const s = ((Date.now() - startTime) / 1000).toFixed(1);
-      timerEl.textContent = s + 's';
+      timerEl.textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
       wpmEl.textContent = calcWPM();
-      accEl.textContent = calcAcc();
+      accEl.textContent = calcAccNum() + '%';
     }, 200);
   }
   typed = inp.value;
@@ -163,11 +245,10 @@ inp.addEventListener('input', () => {
   if (typed === quote) finish();
 });
 
-inp.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') e.preventDefault();
-});
-
+inp.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 btnStart.addEventListener('click', start);
 btnReset.addEventListener('click', reset);
+btnSave.addEventListener('click', saveScore);
+lbDiff.addEventListener('change', loadLeaderboard);
 
-reset();
+loadLeaderboard();

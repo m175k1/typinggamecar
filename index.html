@@ -53,6 +53,10 @@
     <div id="result-banner" class="result-banner hidden">
       <h3 id="result-title">Race complete!</h3>
       <p id="result-detail"></p>
+      <div class="username-row" id="username-row">
+        <input type="text" id="username-input" maxlength="20" placeholder="Enter your name to save score..." />
+        <button id="btn-save">&#128190; Save Score</button>
+      </div>
     </div>
 
     <div class="btn-row">
@@ -60,11 +64,26 @@
       <button id="btn-reset" class="btn-secondary">&#8635; Reset</button>
     </div>
 
+    <div class="leaderboard-wrap">
+      <div class="leaderboard-header">
+        <h2>&#127942; Leaderboard</h2>
+        <select id="lb-diff">
+          <option value="all">All difficulties</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div id="leaderboard">
+        <p class="lb-loading">Loading scores...</p>
+      </div>
+    </div>
+
     <footer>
-      <p>Built with HTML, CSS &amp; JavaScript &mdash; no dependencies</p>
+      <p>Built with HTML, CSS &amp; JavaScript &mdash; powered by Firebase</p>
     </footer>
   </div>
 
-  <script src="game.js"></script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
