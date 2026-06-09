@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Speed Racer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>&#128663; Typing Speed Racer</h1>
+      <p class="subtitle">How fast can you type?</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">WPM</div>
+        <div class="stat-val" id="wpm">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Accuracy</div>
+        <div class="stat-val" id="acc">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Time</div>
+        <div class="stat-val" id="timer">0s</div>
+      </div>
+    </div>
+
+    <div class="track-wrap">
+      <div class="track-header">
+        <span class="track-label">Track</span>
+        <select id="diff">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div class="track">
+        <div class="track-road"></div>
+        <div class="finish">&#127937;</div>
+        <div class="car" id="car">&#128663;</div>
+      </div>
+    </div>
+
+    <div class="quote-box" id="quote-display">
+      <span class="hint">Press Start to load a quote...</span>
+    </div>
+
+    <textarea id="typeinput" rows="2" placeholder="Click Start, then type here..." disabled></textarea>
+
+    <div id="result-banner" class="result-banner hidden">
+      <h3 id="result-title">Race complete!</h3>
+      <p id="result-detail"></p>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-start" class="btn-primary">&#9654; Start</button>
+      <button id="btn-reset" class="btn-secondary">&#8635; Reset</button>
+    </div>
+
+    <footer>
+      <p>Built with HTML, CSS &amp; JavaScript &mdash; no dependencies</p>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
