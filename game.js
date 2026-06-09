@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, limit, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmCkBwxbNpQVLmikHyf2s6XwRyKhs2WLU",
@@ -38,24 +38,25 @@ const QUOTES = {
 };
 
 let quote = '', typed = '', startTime = null, timerInterval = null, running = false, finished = false;
-let lastWPM = 0, lastAcc = '', lastTime = 0;
+let lastWPM = 0, lastAcc = 0, lastTime = 0;
 
-const qDisplay = document.getElementById('quote-display');
-const inp = document.getElementById('typeinput');
-const wpmEl = document.getElementById('wpm');
-const accEl = document.getElementById('acc');
-const timerEl = document.getElementById('timer');
-const carEl = document.getElementById('car');
-const banner = document.getElementById('result-banner');
-const resultTitle = document.getElementById('result-title');
+const qDisplay     = document.getElementById('quote-display');
+const inp          = document.getElementById('typeinput');
+const wpmEl        = document.getElementById('wpm');
+const accEl        = document.getElementById('acc');
+const timerEl      = document.getElementById('timer');
+const carEl        = document.getElementById('car');
+const banner       = document.getElementById('result-banner');
+const resultTitle  = document.getElementById('result-title');
 const resultDetail = document.getElementById('result-detail');
-const btnStart = document.getElementById('btn-start');
-const btnReset = document.getElementById('btn-reset');
-const btnSave = document.getElementById('btn-save');
-const diffSel = document.getElementById('diff');
-const lbDiff = document.getElementById('lb-diff');
-const usernameInput = document.getElementById('username-input');
-const leaderboardEl = document.getElementById('leaderboard');
+const saveStatus   = document.getElementById('save-status');
+const btnStart     = document.getElementById('btn-start');
+const btnReset     = document.getElementById('btn-reset');
+const btnSave      = document.getElementById('btn-save');
+const diffSel      = document.getElementById('diff');
+const lbDiff       = document.getElementById('lb-diff');
+const usernameInput= document.getElementById('username-input');
+const leaderboardEl= document.getElementById('leaderboard');
 
 function pickQuote() {
   const pool = QUOTES[diffSel.value];
@@ -98,12 +99,19 @@ function moveCar() {
   carEl.style.left = Math.round(10 + pct * (trackW - 48 - 10)) + 'px';
 }
 
+function setStatus(msg, type) {
+  saveStatus.textContent = msg;
+  saveStatus.className = 'save-status ' + (type || '');
+  saveStatus.style.display = msg ? 'block' : 'none';
+}
+
 function start() {
   quote = pickQuote();
   typed = '';
   startTime = null;
   finished = false;
   banner.classList.add('hidden');
+  setStatus('');
   wpmEl.textContent = '0';
   accEl.textContent = '—';
   timerEl.textContent = '0s';
@@ -130,7 +138,7 @@ function finish() {
   accEl.textContent = lastAcc + '%';
   timerEl.textContent = lastTime + 's';
   carEl.style.left = (carEl.parentElement.clientWidth - 38) + 'px';
-  resultTitle.textContent = 'Race complete!';
+  resultTitle.textContent = 'Race complete! 🏁';
   resultDetail.textContent = `You typed ${lastWPM} WPM with ${lastAcc}% accuracy in ${lastTime}s.`;
   banner.classList.remove('hidden');
   btnSave.disabled = false;
@@ -140,28 +148,26 @@ function finish() {
 
 function reset() {
   clearInterval(timerInterval);
-  running = false;
-  finished = false;
-  quote = '';
-  typed = '';
-  startTime = null;
-  inp.value = '';
-  inp.disabled = true;
-  wpmEl.textContent = '0';
-  accEl.textContent = '—';
-  timerEl.textContent = '0s';
+  running = false; finished = false;
+  quote = ''; typed = ''; startTime = null;
+  inp.value = ''; inp.disabled = true;
+  wpmEl.textContent = '0'; accEl.textContent = '—'; timerEl.textContent = '0s';
   carEl.style.left = '10px';
   banner.classList.add('hidden');
-  btnStart.disabled = false;
-  diffSel.disabled = false;
+  setStatus('');
+  btnStart.disabled = false; diffSel.disabled = false;
   qDisplay.innerHTML = '<span class="hint">Press Start to load a quote...</span>';
 }
 
 async function saveScore() {
   const name = usernameInput.value.trim();
-  if (!name) { usernameInput.focus(); return; }
+  if (!name) {
+    setStatus('⚠ Please enter your name before saving.', 'status-warn');
+    usernameInput.focus();
+    return;
+  }
   btnSave.disabled = true;
-  btnSave.textContent = 'Saving...';
+  setStatus('Saving your score...', 'status-info');
   try {
     await addDoc(collection(db, 'scores'), {
       username: name,
@@ -171,60 +177,66 @@ async function saveScore() {
       difficulty: diffSel.value,
       createdAt: serverTimestamp()
     });
-    btnSave.textContent = '✓ Saved!';
+    setStatus('✓ Score saved! Check the leaderboard below.', 'status-ok');
+    usernameInput.value = '';
     loadLeaderboard();
   } catch (e) {
-    btnSave.textContent = 'Error — try again';
+    setStatus('✗ Failed to save: ' + (e.message || 'Unknown error. Check your Firestore rules.'), 'status-err');
     btnSave.disabled = false;
     console.error(e);
   }
 }
 
 async function loadLeaderboard() {
-  leaderboardEl.innerHTML = '<p class="lb-loading">Loading scores...</p>';
+  leaderboardEl.innerHTML = '<p class="lb-state">Loading scores...</p>';
   try {
-    const col = collection(db, 'scores');
-    const selectedDiff = lbDiff.value;
-    let q;
-    if (selectedDiff === 'all') {
-      q = query(col, orderBy('wpm', 'desc'), limit(10));
-    } else {
-      q = query(col, where('difficulty', '==', selectedDiff), orderBy('wpm', 'desc'), limit(10));
-    }
-    const snap = await getDocs(q);
+    const snap = await getDocs(query(collection(db, 'scores'), orderBy('wpm', 'desc'), limit(50)));
     if (snap.empty) {
-      leaderboardEl.innerHTML = '<p class="lb-empty">No scores yet — be the first!</p>';
+      leaderboardEl.innerHTML = '<p class="lb-state">No scores yet — be the first!</p>';
       return;
     }
-    const rankIcons = ['🥇', '🥈', '🥉'];
-    const rankClasses = ['gold', 'silver', 'bronze'];
+
+    let rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const filter = lbDiff.value;
+    if (filter !== 'all') rows = rows.filter(r => r.difficulty === filter);
+    rows = rows.slice(0, 10);
+
+    if (rows.length === 0) {
+      leaderboardEl.innerHTML = '<p class="lb-state">No scores for this difficulty yet.</p>';
+      return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+    const rankClass = ['gold', 'silver', 'bronze'];
     let html = `<table class="lb-table">
       <thead><tr>
-        <th>#</th><th>Name</th><th>Difficulty</th><th>Accuracy</th><th>Time</th><th>WPM</th>
+        <th>#</th><th>Name</th><th>Mode</th><th>Acc</th><th>Time</th><th>WPM</th>
       </tr></thead><tbody>`;
-    snap.docs.forEach((doc, i) => {
-      const d = doc.data();
-      const rank = i < 3 ? `<span title="Rank ${i+1}">${rankIcons[i]}</span>` : `${i + 1}`;
-      const rankClass = i < 3 ? rankClasses[i] : '';
+    rows.forEach((d, i) => {
+      const rank = i < 3 ? medals[i] : (i + 1);
+      const rc = i < 3 ? rankClass[i] : '';
       html += `<tr>
-        <td class="rank ${rankClass}">${rank}</td>
+        <td class="rank ${rc}">${rank}</td>
         <td class="name">${escapeHtml(d.username)}</td>
-        <td><span class="diff-badge">${d.difficulty}</span></td>
+        <td><span class="diff-badge diff-${d.difficulty}">${d.difficulty}</span></td>
         <td>${d.accuracy}%</td>
         <td>${d.time}s</td>
-        <td class="wpm">${d.wpm}</td>
+        <td class="wpm-cell">${d.wpm}</td>
       </tr>`;
     });
     html += '</tbody></table>';
     leaderboardEl.innerHTML = html;
   } catch (e) {
-    leaderboardEl.innerHTML = '<p class="lb-empty">Could not load scores.</p>';
+    leaderboardEl.innerHTML = `<p class="lb-state lb-err">⚠ Could not load scores: ${e.message}</p>`;
     console.error(e);
   }
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 inp.addEventListener('input', () => {

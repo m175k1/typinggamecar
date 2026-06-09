@@ -8,29 +8,21 @@
 </head>
 <body>
   <div id="app">
+
     <header>
-      <h1>&#128663; Typing Speed Racer</h1>
+      <h1>🏎️ Typing Speed Racer</h1>
       <p class="subtitle">How fast can you type?</p>
     </header>
 
     <div class="stats">
-      <div class="stat">
-        <div class="stat-label">WPM</div>
-        <div class="stat-val" id="wpm">0</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Accuracy</div>
-        <div class="stat-val" id="acc">—</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Time</div>
-        <div class="stat-val" id="timer">0s</div>
-      </div>
+      <div class="stat"><div class="stat-label">WPM</div><div class="stat-val" id="wpm">0</div></div>
+      <div class="stat"><div class="stat-label">Accuracy</div><div class="stat-val" id="acc">—</div></div>
+      <div class="stat"><div class="stat-label">Time</div><div class="stat-val" id="timer">0s</div></div>
     </div>
 
-    <div class="track-wrap">
-      <div class="track-header">
-        <span class="track-label">Track</span>
+    <div class="card">
+      <div class="row-between">
+        <span class="label">Difficulty</span>
         <select id="diff">
           <option value="easy">Easy</option>
           <option value="medium" selected>Medium</option>
@@ -39,8 +31,8 @@
       </div>
       <div class="track">
         <div class="track-road"></div>
-        <div class="finish">&#127937;</div>
-        <div class="car" id="car">&#128663;</div>
+        <div class="finish">🏁</div>
+        <div class="car" id="car">🏎️</div>
       </div>
     </div>
 
@@ -51,22 +43,27 @@
     <textarea id="typeinput" rows="2" placeholder="Click Start, then type here..." disabled></textarea>
 
     <div id="result-banner" class="result-banner hidden">
-      <h3 id="result-title">Race complete!</h3>
-      <p id="result-detail"></p>
-      <div class="username-row" id="username-row">
-        <input type="text" id="username-input" maxlength="20" placeholder="Enter your name to save score..." />
-        <button id="btn-save">&#128190; Save Score</button>
+      <div class="result-top">
+        <div>
+          <h3 id="result-title">Race complete! 🏁</h3>
+          <p id="result-detail"></p>
+        </div>
       </div>
+      <div class="save-row">
+        <input type="text" id="username-input" maxlength="20" placeholder="Your name..." />
+        <button id="btn-save">Save Score</button>
+      </div>
+      <div id="save-status" class="save-status hidden"></div>
     </div>
 
     <div class="btn-row">
-      <button id="btn-start" class="btn-primary">&#9654; Start</button>
-      <button id="btn-reset" class="btn-secondary">&#8635; Reset</button>
+      <button id="btn-start" class="btn-primary">▶ Start</button>
+      <button id="btn-reset" class="btn-ghost">↺ Reset</button>
     </div>
 
-    <div class="leaderboard-wrap">
-      <div class="leaderboard-header">
-        <h2>&#127942; Leaderboard</h2>
+    <div class="card leaderboard-card">
+      <div class="row-between">
+        <h2 class="lb-title">🏆 Leaderboard</h2>
         <select id="lb-diff">
           <option value="all">All difficulties</option>
           <option value="easy">Easy</option>
@@ -74,16 +71,12 @@
           <option value="hard">Hard</option>
         </select>
       </div>
-      <div id="leaderboard">
-        <p class="lb-loading">Loading scores...</p>
-      </div>
+      <div id="leaderboard"><p class="lb-state">Loading scores...</p></div>
     </div>
 
-    <footer>
-      <p>Built with HTML, CSS &amp; JavaScript &mdash; powered by Firebase</p>
-    </footer>
-  </div>
+    <footer><p>Powered by Firebase · Hosted on GitHub Pages</p></footer>
 
+  </div>
   <script type="module" src="game.js"></script>
 </body>
 </html>
