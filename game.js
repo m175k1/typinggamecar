@@ -210,8 +210,11 @@ async function loadLeaderboard() {
     const medals = ['🥇', '🥈', '🥉'];
     const rankClass = ['gold', 'silver', 'bronze'];
     let html = `<table class="lb-table">
+      <colgroup>
+        <col/><col/><col/><col/><col/><col/>
+      </colgroup>
       <thead><tr>
-        <th>#</th><th>Name</th><th>Mode</th><th>Acc</th><th>Time</th><th>WPM</th>
+        <th>#</th><th>Name</th><th>Difficulty</th><th>Accuracy</th><th>Time</th><th>WPM</th>
       </tr></thead><tbody>`;
     rows.forEach((d, i) => {
       const rank = i < 3 ? medals[i] : (i + 1);

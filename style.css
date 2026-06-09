@@ -149,26 +149,49 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-ghost:hover { background: var(--bg3); }
 
 /* Leaderboard */
-.leaderboard-card { padding: 16px 18px; }
+.leaderboard-card { padding: 20px 20px 8px; }
 .lb-title { font-size: 15px; font-weight: 500; }
-.lb-state { font-size: 13px; color: var(--text3); text-align: center; padding: 20px 0; }
+.lb-state { font-size: 13px; color: var(--text3); text-align: center; padding: 24px 0; }
 .lb-err { color: var(--red); }
 
-.lb-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+.lb-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; table-layout: fixed; }
+
+.lb-table colgroup col:nth-child(1) { width: 42px; }
+.lb-table colgroup col:nth-child(2) { width: auto; }
+.lb-table colgroup col:nth-child(3) { width: 90px; }
+.lb-table colgroup col:nth-child(4) { width: 70px; }
+.lb-table colgroup col:nth-child(5) { width: 62px; }
+.lb-table colgroup col:nth-child(6) { width: 58px; }
+
 .lb-table th {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--text3); text-align: left; padding: 0 8px 8px; font-weight: 500; border-bottom: 0.5px solid var(--border);
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text3); text-align: left;
+  padding: 0 12px 10px 12px;
+  font-weight: 500;
+  border-bottom: 0.5px solid var(--border);
 }
-.lb-table th:last-child, .lb-table td:last-child { text-align: right; }
-.lb-table td { padding: 9px 8px; border-bottom: 0.5px solid var(--border); color: var(--text2); vertical-align: middle; }
+.lb-table th:first-child { padding-left: 6px; }
+.lb-table th:last-child, .lb-table td:last-child { text-align: right; padding-right: 6px; }
+
+.lb-table td {
+  padding: 11px 12px;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text2);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-table td:first-child { padding-left: 6px; }
 .lb-table tr:last-child td { border-bottom: none; }
 .lb-table tr:hover td { background: var(--bg2); }
-.rank { width: 30px; font-size: 16px; }
+
+.rank { font-size: 18px; line-height: 1; }
 .rank.gold   { color: var(--gold); }
 .rank.silver { color: var(--silver); }
 .rank.bronze { color: var(--bronze); }
 td.name { font-weight: 500; color: var(--text); }
-td.wpm-cell { font-weight: 600; font-size: 15px; color: var(--text); }
+td.wpm-cell { font-weight: 600; font-size: 16px; color: var(--text); }
 
 .diff-badge {
   display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px;
